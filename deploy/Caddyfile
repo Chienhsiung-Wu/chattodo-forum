@@ -1,0 +1,20 @@
+# ChatTodo 论坛 — Caddy 反代 + 自动 TLS
+# 用法：把域名换成你的，放到 /etc/caddy/Caddyfile（或 import 进去），systemctl reload caddy。
+# Caddy 会自动向 Let's Encrypt 申请并续期证书（前提：该域名的 A/AAAA 记录已指向本服务器，80/443 放行）。
+
+forum.example.com {
+	# NodeBB 只在本机 4567 监听，由 Caddy 反代对外。
+	reverse_proxy 127.0.0.1:4567
+
+	# 反代自动带 X-Forwarded-Proto/For/Host；NodeBB 的 trust_proxy 会据此识别 https 与真实来源 IP。
+
+	# WebSocket（socket.io）无需额外配置，Caddy 的 reverse_proxy 默认透传 Upgrade。
+
+	# 访问日志（可选）
+	log {
+		output file /var/log/caddy/forum-access.log
+		format console
+	}
+
+	encode zstd gzip
+}

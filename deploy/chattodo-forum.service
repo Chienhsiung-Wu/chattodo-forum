@@ -1,0 +1,38 @@
+# ChatTodo 论坛 — systemd 服务单元
+# 安装：
+#   sudo cp deploy/chattodo-forum.service /etc/systemd/system/
+#   （按实际改 User/WorkingDirectory/ExecStart 中的路径和 node 绝对路径）
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now chattodo-forum
+# 查看日志： journalctl -u chattodo-forum -f
+
+[Unit]
+Description=ChatTodo Community Forum (NodeBB)
+Documentation=https://docs.nodebb.org
+After=network.target
+# 若 Postgres 用 docker compose 在同机跑，可加： After=docker.service
+
+[Service]
+Type=simple
+User=nodebb
+Group=nodebb
+WorkingDirectory=/opt/chattodo-forum/nodebb
+
+# --no-daemon：前台运行（不 fork），交给 systemd 守护；--no-silent：日志走 stdout→journald
+ExecStart=/usr/bin/node /opt/chattodo-forum/nodebb/loader.js --no-daemon --no-silent
+
+# 环境变量：数据库连接等从 .env 读取（EnvironmentFile 的路径按实际调整）
+EnvironmentFile=/opt/chattodo-forum/.env
+
+Restart=always
+RestartSec=5
+# NodeBB 构建/语言包在正常服务器 fd 上限下无需限制；如遇 EMFILE 可解开下一行
+# LimitNOFILE=65536
+
+# 基本加固
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
