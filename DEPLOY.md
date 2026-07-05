@@ -1,28 +1,39 @@
-# 部署到 Ubuntu 服务器（Caddy 反代 · 纯浏览上线）
+# 部署到 OpenCloudOS 服务器（Caddy 反代 · 纯浏览上线）
 
-本清单对应「先不接真实 App SSO、以公开浏览为主」的上线目标。全程在 Ubuntu 上操作。
-后续要开放真实登录/团队 IM 通知时，见文末「后续：接真实 SSO / IM」。
+本清单对应「先不接真实 App SSO、以公开浏览为主」的上线目标。目标系统 **OpenCloudOS**
+（腾讯云，RHEL/CentOS 血统，用 `dnf`、`firewalld`、SELinux）。后续接真实登录/IM 见文末。
 
 > 约定：项目部署在 `/opt/chattodo-forum`，运行用户 `nodebb`，域名 `forum.example.com`。
 > 按你的实际情况替换这些值（同时改 `deploy/*.service`、`deploy/Caddyfile`、`.env`）。
+>
+> 命令用 `dnf`（RHEL 系）。若你实际是 Debian/Ubuntu，把 `dnf install` 换成 `apt-get install`、
+> Node/Caddy 改用各自的 apt 源即可，其余步骤一致。
 
 ---
 
 ## 0. 前置
 
-- Ubuntu 22.04/24.04，有 sudo。
+- OpenCloudOS（8/9 系），有 sudo。查版本：`cat /etc/os-release`。
 - 域名 `forum.example.com` 的 A/AAAA 记录已指向服务器公网 IP。
-- 云安全组/防火墙对外只放行 **80、443**（SSH 另计）。**不要**对外暴露 4567 / Postgres。
+- **腾讯云安全组**对外只放行 **80、443**（SSH 另计）——这是第一道，务必在控制台配置。
+  服务器本地 `firewalld` 见第 8.5 步。**不要**对外暴露 4567 / Postgres。
+- 装基础工具：`sudo dnf install -y git curl tar`。
 
-## 1. 安装 Node ≥ 22.10 LTS
+## 1. 安装 Node ≥ 22.10 LTS（官方静态二进制，与发行版无关）
 
-本机沙箱因系统 Node 22.9.0 缺 `markAsUncloneable` 才用了 portable Node；服务器直接装新版即可，无此坑。
+NodeSource 的 rpm 源不一定识别 OpenCloudOS，直接用官方静态包最稳（和本机 portable Node 一个思路）。
+本机沙箱因系统 Node 22.9.0 缺 `markAsUncloneable` 才用 portable；服务器装新版即无此坑。
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs git
-node --version   # 需 >= v22.10
+cd /tmp
+curl -fLO https://nodejs.org/dist/v22.23.1/node-v22.23.1-linux-x64.tar.xz
+sudo tar -xJf node-v22.23.1-linux-x64.tar.xz -C /usr/local --strip-components=1
+node --version   # v22.23.1；which node → /usr/local/bin/node
+npm --version
 ```
+
+> 若偏好包管理器：OpenCloudOS 8 可 `sudo dnf module install nodejs:22`（前提模块流有 22），
+> 但要确认版本 ≥ 22.10，否则仍会踩 undici 的 `markAsUncloneable` 坑。拿不准就用上面的静态包。
 
 ## 2. 建运行用户 + 拉代码
 
@@ -36,20 +47,26 @@ sudo -u nodebb git checkout <部署分支>
 
 ## 3. 准备 Postgres
 
-任选其一，二选一即可：
+任选其一。**OpenCloudOS 上推荐 B（原生 dnf）**，比装 Docker 更省事；已经在用 Docker 才选 A。
 
 **A) Docker Compose（本仓库自带 `docker-compose.yml`）**
 ```bash
-# 安装 docker + compose 插件后：
+# OpenCloudOS 装 docker：sudo dnf install -y docker docker-compose-plugin && sudo systemctl enable --now docker
 cd /opt/chattodo-forum
 sudo -u nodebb PG_HOST_PORT=5432 docker compose up -d postgres
 ```
 
-**B) 原生 apt 安装**
+**B) 原生 dnf 安装（RHEL 系需手动 initdb）**
 ```bash
-sudo apt-get install -y postgresql
+sudo dnf install -y postgresql-server
+sudo postgresql-setup --initdb                 # RHEL 系首次必须初始化数据目录
+sudo systemctl enable --now postgresql
 sudo -u postgres psql -c "CREATE USER nodebb WITH PASSWORD '强密码';"
 sudo -u postgres psql -c "CREATE DATABASE nodebb OWNER nodebb;"
+# RHEL 系默认 peer/ident 认证，需允许本机 TCP 密码登录：
+#   编辑 /var/lib/pgsql/data/pg_hba.conf，确保有一行：
+#     host  nodebb  nodebb  127.0.0.1/32  md5
+#   然后 sudo systemctl restart postgresql
 ```
 
 无论哪种，Postgres 都**只监听 127.0.0.1**，不要对公网开放。
@@ -103,21 +120,52 @@ journalctl -u chattodo-forum -f             # 跟踪日志，等 "NodeBB is now 
 curl -sI http://127.0.0.1:4567/ | head -1   # 期望 HTTP/1.1 200 OK
 ```
 
-## 8. 装 Caddy 反代 + 自动 TLS
+## 8. 装 Caddy 反代 + 自动 TLS（官方静态二进制）
+
+Caddy 官方 apt 源不适用于 OpenCloudOS，用官方静态二进制 + 本仓库自带的 `deploy/caddy.service`。
 
 ```bash
-sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt-get update && sudo apt-get install -y caddy
+# 1) 下载静态二进制（amd64；ARM 机器把 amd64 换成 arm64）
+curl -fL "https://caddyserver.com/api/download?os=linux&arch=amd64" -o /tmp/caddy
+sudo install -m 0755 /tmp/caddy /usr/bin/caddy
+caddy version
 
-# 放置站点配置（把域名改成你的）
+# 2) 建 caddy 用户与目录
+sudo useradd --system --home /var/lib/caddy --create-home --shell /usr/sbin/nologin caddy 2>/dev/null || true
+sudo mkdir -p /etc/caddy /var/log/caddy && sudo chown -R caddy:caddy /var/log/caddy
+
+# 3) 放站点配置（把域名改成你的）
 sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
-sudo nano /etc/caddy/Caddyfile               # 改 forum.example.com
-sudo mkdir -p /var/log/caddy && sudo chown caddy:caddy /var/log/caddy
-sudo systemctl reload caddy
+sudo vi /etc/caddy/Caddyfile                  # 改 forum.example.com
+
+# 4) 装 systemd 单元并启动
+sudo cp deploy/caddy.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now caddy
 journalctl -u caddy -f                        # 看证书签发是否成功
 ```
+
+## 8.5 防火墙（firewalld）
+
+```bash
+sudo firewall-cmd --permanent --add-service=http     # 80
+sudo firewall-cmd --permanent --add-service=https    # 443
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-services                    # 确认含 http https
+```
+> 注意：腾讯云**安全组**是更外层的一道，也必须放行 80/443，否则 firewalld 放了也进不来。
+> 4567 与 Postgres **不要**加入任何放行规则。
+
+## 8.6 SELinux（RHEL 系特有，反代 502 时看这里）
+
+OpenCloudOS 默认 SELinux 常为 enforcing。它会**默认禁止 Caddy 主动向 127.0.0.1:4567 发起连接**，
+表现为 Caddy 能起、但访问返回 502。放行本机 HTTP 出站连接：
+```bash
+getenforce                                    # Enforcing / Permissive / Disabled
+sudo setsebool -P httpd_can_network_connect 1 # 允许反代进程连本机后端（持久）
+```
+若仍 502，用 `sudo ausearch -m avc -ts recent` 看被拒的具体项，再按提示放行。
+（Permissive/Disabled 的机器无需此步。）
 
 ## 9. 验收
 

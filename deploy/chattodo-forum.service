@@ -19,7 +19,8 @@ Group=nodebb
 WorkingDirectory=/opt/chattodo-forum/nodebb
 
 # --no-daemon：前台运行（不 fork），交给 systemd 守护；--no-silent：日志走 stdout→journald
-ExecStart=/usr/bin/node /opt/chattodo-forum/nodebb/loader.js --no-daemon --no-silent
+# node 路径按安装方式改：官方静态包安装为 /usr/local/bin/node（查 which node 确认）
+ExecStart=/usr/local/bin/node /opt/chattodo-forum/nodebb/loader.js --no-daemon --no-silent
 
 # 环境变量：数据库连接等从 .env 读取（EnvironmentFile 的路径按实际调整）
 EnvironmentFile=/opt/chattodo-forum/.env
