@@ -4,12 +4,15 @@
  * 论坛结构与内容一键初始化（幂等）。对应 PRD FR-2 / FR-3 / FR-4 / FR-6。
  * 直接加载 NodeBB 核心模块操作数据库；运行前需 config.json 已生成（./nodebb setup 完成）。
  * 用法：node scripts/bootstrap.js   （建议运行后重启 NodeBB 以刷新缓存）
+ *
+ * nconf 显式从 nodebb/node_modules 解析（而非裸 require('nconf')），
+ * 这样无需像 NODE_PATH=... node ... 那样的 shell 专属语法即可跨平台直接运行。
  */
 
 const path = require('path');
-const nconf = require('nconf');
 
 const NBB = path.resolve(__dirname, '../nodebb');
+const nconf = require(path.join(NBB, 'node_modules/nconf'));
 nconf.argv().env({ separator: '__' });
 const prestart = require(path.join(NBB, 'src/prestart'));
 prestart.setupWinston();

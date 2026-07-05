@@ -8,13 +8,18 @@
 
 ## 一分钟看结果
 
+全流程纯 Node.js 编排（`npm run ...`），**Windows / macOS / Linux 通用**，不依赖 bash / WSL：
+
 ```bash
-bash scripts/install.sh      # 从零克隆 NodeBB、打补丁、建库、装插件、灌种子（幂等）
-bash scripts/dev-up.sh       # 启动 Postgres + mock SSO + mock IM + NodeBB
-node scripts/screenshots.mjs # 生成 8 张 DoD 验收截图到 screenshots/
+npm install          # 安装编排依赖（express、playwright）
+npm run setup        # 从零克隆 NodeBB、打补丁、建库、装插件、灌种子（幂等）
+npm run dev           # 启动 Postgres（未运行则自动 docker compose 拉起）+ mock SSO + mock IM + NodeBB
+npm run screenshots   # 生成 8 张 DoD 验收截图到 screenshots/
 ```
 
-打开 <http://localhost:4567> 即为论坛首页。验收截图见 [`screenshots/`](screenshots/)。
+打开 <http://localhost:4567> 即为论坛首页。`npm run dev` 运行期间按 `Ctrl+C` 可一次性停止全部服务。验收截图见 [`screenshots/`](screenshots/)。
+
+**前置要求**：Node.js ≥ 22、Git；PostgreSQL 需可连接——已安装 **Docker Desktop** 时 `npm run setup` / `npm run dev` 会自动用 `docker-compose.yml` 拉起，否则请自行安装/启动 PostgreSQL 并用环境变量 `PGHOST`/`PGPORT`/`DBUSER`/`DBPASS`/`DBNAME` 指向它。
 
 ---
 
@@ -22,7 +27,7 @@ node scripts/screenshots.mjs # 生成 8 张 DoD 验收截图到 screenshots/
 
 按需求：**克隆现成开源论坛（NodeBB）在其基础上改**，而非从零自研或 Discourse 部署包。
 
-- `nodebb/`（**不入库**，`install.sh` 重建）：NodeBB v4.11.3 克隆，含一处核心补丁。
+- `nodebb/`（**不入库**，`npm run setup` 重建）：NodeBB v4.11.3 克隆，含一处核心补丁。
 - `plugins/`：两个自研薄插件（真源，符号链接进 NodeBB）。
 - `mocks/`：闭环 mock 服务（App SSO 后端、团队 IM 中转）。
 - `scripts/`：安装、初始化、种子内容、验收截图。
@@ -39,8 +44,10 @@ chattodo-forum/
 │   ├── nodebb-plugin-chattodo-sso/       FR-1/FR-2：OAuth2 SSO + m- 前缀群组同步 + 角标优先级
 │   └── nodebb-plugin-chattodo-forum/     FR-4/FR-5：功能建议按票排序 + 新话题推 IM + 状态标签门禁
 ├── scripts/
-│   ├── install.sh                        一键重建（幂等）
-│   ├── dev-up.sh                         启动全部服务
+│   ├── install.mjs                       一键重建（幂等，纯 Node.js，Windows/macOS/Linux 通用）
+│   ├── dev-up.mjs                        启动全部服务（Ctrl+C 一键停止）
+│   ├── dev-down.mjs                      备用：单独停止 NodeBB（终端异常关闭时使用）
+│   ├── lib/                              跨平台小工具（进程调用、等待 Postgres 就绪）
 │   ├── patch-nodebb.js                   NodeBB 核心补丁（EMFILE 分批并发）
 │   ├── bootstrap.js                      群组/版块/权限/staff/会员/种子内容/品牌/语言
 │   ├── seed-data.js                      22 篇中文种子正文
@@ -85,11 +92,23 @@ chattodo-forum/
 
 ---
 
+## 跨平台设计（Windows / macOS / Linux）
+
+编排脚本（`scripts/install.mjs`、`scripts/dev-up.mjs`、`scripts/dev-down.mjs`）全部是纯 Node.js，**不依赖 bash / `pg_ctlcluster` / `ln -sfn` / `nohup` / `pkill`**，克隆仓库后 `npm install && npm run setup && npm run dev` 在 Windows 上可直接跑：
+
+- **PostgreSQL**：优先探测并复用已可连接的实例（原生安装、已起的容器、CI 服务容器均可）；探测不到且本机装有 **Docker Desktop** 时，自动 `docker compose up -d postgres`。
+- **插件安装**：`fs.symlinkSync(..., 'junction')` 代替 `ln -sfn`——Windows 上目录 junction 无需管理员权限，POSIX 上等价于普通符号链接。
+- **命令调用**：一律用 `process.execPath`（当前 node 可执行文件的绝对路径）+ 参数数组直接 spawn，不经过 shell 拼接字符串，规避 Windows `cmd.exe` 的引号转义问题；仅 `npm` 按平台选 `npm`/`npm.cmd`。
+- **NodeBB 生命周期**：用官方 `nodebb start` / `nodebb stop`（其 daemon 化基于 `child_process.spawn({detached:true})+unref()`，是纯 Node API，并非 Unix-only 的 `setsid`/双重 `fork`），比"前台子进程 + 逐级转发信号"更可靠。
+- **已知局限**：Windows 上跨进程发送 `SIGTERM` 会被当作强制终止而非优雅信号，`Ctrl+C` 停止服务后如端口 4567 仍被占用，`npm run dev` / `npm run dev:stop` 会打印手动收尾指引（`node nodebb/nodebb stop`）而不是静默假装已停干净。
+
+---
+
 ## 沙箱环境适配（与原 PRD/常规部署的差异）
 
 本仓库在受限沙箱内构建，做了如下适配（均记录在脚本中，真实部署可回退）：
 
-1. **Docker Hub 镜像被网络策略拦截** → 改用环境已装的**原生 Postgres**；`docker-compose.yml` 保留供真实机器使用。
+1. **Docker Hub 镜像被网络策略拦截** → `scripts/lib/postgres.mjs` 探测到环境已有可连接的**原生 Postgres** 后直接复用、不再尝试拉容器（同一套逻辑在真实机器/Windows+Docker Desktop 上会走 `docker compose up -d postgres`，见「跨平台设计」一节）。
 2. **NodeBB minifier 子进程 fork 的 IPC 在沙箱内不稳** → `config.json` 设 `threads:1` 令压缩内联执行。
 3. **容器 fd 上限 4096 且不可调高**，语言包构建并发开约 4000 文件触发 EMFILE → `patch-nodebb.js` 将其改为分批并发。
 4. **NodeBB 插件市场（nbbpm）不可达** → 插件改用 `npm install` 直装。
