@@ -1,0 +1,17 @@
+{
+  "name": "chattodo-forum",
+  "version": "0.0.1",
+  "private": true,
+  "description": "官方中文社区论坛（基于 NodeBB）— 环境编排、mock 服务与验证脚本",
+  "scripts": {
+    "mock:sso": "node mocks/sso/server.js",
+    "mock:im": "node mocks/im/server.js",
+    "screenshots": "node scripts/screenshots.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

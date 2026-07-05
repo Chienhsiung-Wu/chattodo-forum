@@ -1,0 +1,13 @@
+{
+	"name": "nodebb-plugin-chattodo-sso",
+	"version": "0.0.1",
+	"description": "ChatTodo forum SSO plugin (OAuth2 delegated to App backend)",
+	"main": "library.js",
+	"license": "MIT",
+	"dependencies": {
+		"passport-oauth2": "^1.8.0"
+	},
+	"nbbpm": {
+		"compatibility": "^4.0.0"
+	}
+}
