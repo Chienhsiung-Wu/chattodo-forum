@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: nodebb
       POSTGRES_DB: nodebb
     ports:
-      - "5432:5432"
+      # 宿主端口可用 PG_HOST_PORT 覆盖（默认 5432）；本机 5432 被其它服务占用时改用它。
+      - "${PG_HOST_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

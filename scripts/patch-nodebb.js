@@ -43,7 +43,9 @@ const PATCHED = `	const tasks = [];
 }`;
 
 function main() {
-	let src = fs.readFileSync(langFile, 'utf8');
+	// Windows 检出时 NodeBB 源文件可能是 CRLF，而本文件的匹配串是 LF，
+	// 先把行尾归一为 LF 再匹配/替换，避免跨平台行尾差异导致补丁失配。
+	let src = fs.readFileSync(langFile, 'utf8').replace(/\r\n/g, '\n');
 	if (src.includes('Cap concurrency to avoid EMFILE')) {
 		console.log('[patch] languages.js 已打补丁，跳过');
 		return;

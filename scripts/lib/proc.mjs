@@ -10,9 +10,19 @@ export function npmCmd() {
 	return process.platform === 'win32' ? 'npm.cmd' : 'npm';
 }
 
+// Windows 上新版 Node（安全修复后）禁止不经 shell 直接 spawn .cmd/.bat，否则抛 EINVAL。
+// 这里对 .cmd/.bat 命令自动补 shell:true；node/git/docker 等真实 .exe 不受影响。
+function shellOpt(cmd, opts) {
+	if (opts.shell !== undefined) { return opts; }
+	if (process.platform === 'win32' && /\.(cmd|bat)$/i.test(cmd)) {
+		return { ...opts, shell: true };
+	}
+	return opts;
+}
+
 // 同步执行一个命令，失败即抛出（用于安装类关键步骤）。
 export function run(cmd, args, opts = {}) {
-	const res = spawnSync(cmd, args, { stdio: 'inherit', ...opts });
+	const res = spawnSync(cmd, args, { stdio: 'inherit', ...shellOpt(cmd, opts) });
 	if (res.error) { throw res.error; }
 	if (res.status !== 0) {
 		throw new Error(`命令失败 (exit ${res.status}): ${cmd} ${args.join(' ')}`);
@@ -28,7 +38,7 @@ export function runNode(scriptFile, args = [], opts = {}) {
 
 // 静默尝试执行一个命令，只返回是否成功（用于探测 docker 是否可用等）。
 export function tryRun(cmd, args, opts = {}) {
-	const res = spawnSync(cmd, args, { stdio: 'ignore', ...opts });
+	const res = spawnSync(cmd, args, { stdio: 'ignore', ...shellOpt(cmd, opts) });
 	return !res.error && res.status === 0;
 }
 
@@ -58,5 +68,5 @@ export async function waitForTcpPort(host, port, { retries = 30, intervalMs = 10
 
 // 启动一个长驻子进程（继承 stdio，方便 dev-up 场景在同一个终端看到日志）。
 export function spawnLong(cmd, args, opts = {}) {
-	return spawn(cmd, args, { stdio: 'inherit', ...opts });
+	return spawn(cmd, args, { stdio: 'inherit', ...shellOpt(cmd, opts) });
 }
