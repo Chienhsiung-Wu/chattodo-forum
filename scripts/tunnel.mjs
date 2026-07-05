@@ -84,23 +84,38 @@ async function main() {
 	}
 
 	const bin = resolveCloudflared();
+	// cloudflared 默认走 QUIC（UDP 7844），很多公司网络/代理会挡 UDP，表现为
+	// "failed to dial to edge with quic: timeout"。默认改用 http2（走 TCP 443）更易穿透；
+	// 可用 CF_PROTOCOL=quic 覆盖回默认。
+	const protocol = process.env.CF_PROTOCOL || 'http2';
 	console.log(`==> 启动 Cloudflare 快速隧道 → ${LOCAL_URL}`);
-	console.log(`   cloudflared: ${bin}`);
+	console.log(`   cloudflared: ${bin}  (protocol=${protocol})`);
 
 	// 2) 起 quick tunnel。cloudflared 把分配的 URL 打到 stderr。
-	cf = spawn(bin, ['tunnel', '--no-autoupdate', '--url', LOCAL_URL], {
+	cf = spawn(bin, ['tunnel', '--no-autoupdate', '--protocol', protocol, '--url', LOCAL_URL], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
 
 	let applied = false;
+	// 只认真正分配的随机子域名，排除 api.trycloudflare.com（那是申请隧道的 API 端点，
+	// 会出现在报错信息里，不是可访问地址）。
 	const urlRe = /(https:\/\/[a-z0-9-]+\.trycloudflare\.com)/i;
 
 	const onData = (buf) => {
 		const text = buf.toString();
 		process.stdout.write(text.split('\n').filter(Boolean).map(l => `   [cf] ${l}`).join('\n') + '\n');
 		if (applied) { return; }
+		// 申请隧道失败（常见于本机 VPN/代理拦截了到 Cloudflare 的连接）：明确报错而非假装成功。
+		if (/failed to request quick Tunnel|failed to dial to edge/i.test(text)) {
+			console.error('\n[tunnel] 无法连上 Cloudflare 边缘（申请隧道失败）。');
+			console.error('  常见原因：本机 VPN/代理（Clash/Surge 等）拦截了到 *.trycloudflare.com 的连接，');
+			console.error('  或公司网络封锁了相关端口。请临时关闭代理/VPN，或让其对 trycloudflare.com 走直连后重试。');
+			console.error('  也可试 CF_PROTOCOL=quic npm run tunnel 切换协议。');
+			shutdown(1);
+			return;
+		}
 		const m = text.match(urlRe);
-		if (!m) { return; }
+		if (!m || m[1].includes('//api.trycloudflare.com')) { return; }
 		applied = true;
 		const publicUrl = m[1];
 		// 3) 把公网地址写进 NodeBB config 并重启，让 socket.io / 绝对链接指向隧道。
