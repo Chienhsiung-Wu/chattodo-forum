@@ -9,6 +9,7 @@ scripts/setup.json
 node_modules/
 *.log
 .env
+.env.deploy
 
 # Playwright verification output (kept in repo as DoD evidence — see screenshots/)
 # /screenshots/*.png

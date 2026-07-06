@@ -16,7 +16,8 @@
     "bootstrap": "node scripts/bootstrap.js",
     "mock:sso": "node mocks/sso/server.js",
     "mock:im": "node mocks/im/server.js",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {
     "express": "^4.21.2"
