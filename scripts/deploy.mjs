@@ -104,7 +104,7 @@ function main() {
 
 	// 3) VPS 拉取最新代码
 	log('3/6 VPS 拉取代码');
-	sshOut(`cd ${PROJECT_DIR} && git fetch origin && git checkout ${BRANCH} && git reset --hard origin/${BRANCH}`);
+	sshOut("cd ${PROJECT_DIR} && sudo -u nodebb git -C ${PROJECT_DIR} config --global --add safe.directory ${PROJECT_DIR} 2>/dev/null; sudo -u nodebb git -C ${PROJECT_DIR} fetch origin && sudo -u nodebb git -C ${PROJECT_DIR} checkout ${BRANCH} && sudo -u nodebb git -C ${PROJECT_DIR} reset --hard origin/${BRANCH}");
 	console.log('   拉取完成 ✓');
 
 	// 4) 安装根目录依赖
