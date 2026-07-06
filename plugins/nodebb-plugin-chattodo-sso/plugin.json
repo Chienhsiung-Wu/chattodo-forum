@@ -1,0 +1,10 @@
+{
+	"id": "nodebb-plugin-chattodo-sso",
+	"name": "LinX SSO (DiscourseConnect-style)",
+	"description": "委托 App 后端的 OAuth2 SSO：external_id 绑定、双轨邮箱、m- 前缀会员群组同步、主群组角标优先级。",
+	"url": "https://bbs.chattodo.local",
+	"hooks": [
+		{ "hook": "static:app.load", "method": "init" },
+		{ "hook": "filter:auth.init", "method": "getStrategy" }
+	]
+}

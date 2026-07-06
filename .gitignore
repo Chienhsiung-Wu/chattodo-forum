@@ -1,1 +1,18 @@
 .idea
+
+# NodeBB is cloned/vendored locally (reproducible via scripts/install.sh); do not commit its source
+/nodebb/
+
+# generated / local runtime artifacts
+config.json
+scripts/setup.json
+node_modules/
+*.log
+.env
+.env.deploy
+
+# Playwright verification output (kept in repo as DoD evidence — see screenshots/)
+# /screenshots/*.png
+
+# scratch
+.DS_Store

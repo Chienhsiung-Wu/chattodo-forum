@@ -1,0 +1,28 @@
+{
+  "name": "chattodo-forum",
+  "version": "0.0.1",
+  "private": true,
+  "description": "官方中文社区论坛（基于 NodeBB）— 环境编排、mock 服务与验证脚本",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "node scripts/install.mjs",
+    "dev": "node scripts/dev-up.mjs",
+    "dev:stop": "node scripts/dev-down.mjs",
+    "tunnel": "node scripts/tunnel.mjs",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "bootstrap": "node scripts/bootstrap.js",
+    "mock:sso": "node mocks/sso/server.js",
+    "mock:im": "node mocks/im/server.js",
+    "screenshots": "node scripts/screenshots.mjs",
+    "deploy": "node scripts/deploy.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

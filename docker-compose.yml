@@ -1,0 +1,30 @@
+# 论坛依赖服务（仅 Postgres + mock SMTP 走 Docker；NodeBB 以原生 node 进程运行）
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: chattodo-postgres
+    environment:
+      POSTGRES_USER: nodebb
+      POSTGRES_PASSWORD: nodebb
+      POSTGRES_DB: nodebb
+    ports:
+      # 宿主端口可用 PG_HOST_PORT 覆盖（默认 5432）；本机 5432 被其它服务占用时改用它。
+      - "${PG_HOST_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nodebb -d nodebb"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # mock SMTP：捕获所有外发邮件，1025 收信，8025 提供 Web UI + HTTP API（FR-5 邮件闭环）
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: chattodo-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pgdata: {}
