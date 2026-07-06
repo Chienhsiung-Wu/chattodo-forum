@@ -3,6 +3,29 @@
 本清单对应「先不接真实 App SSO、以公开浏览为主」的上线目标。目标系统 **OpenCloudOS**
 （腾讯云，RHEL/CentOS 血统，用 `dnf`、`firewalld`、SELinux）。后续接真实登录/IM 见文末。
 
+> ## 🚀 一键脚本（推荐，无域名 · IP 直连 · 纯 HTTP）
+>
+> 若你的场景是 **RHEL 系 + 原生 Postgres + 用公网 IP 直接访问（暂无域名）**，
+> 无需手动跑下面 10 步，直接用 [`deploy/deploy.sh`](deploy/deploy.sh)：
+>
+> ```bash
+> # 在 VPS 上以 root 运行（幂等，可反复跑 = 更新部署）
+> curl -fsSL https://raw.githubusercontent.com/chienhsiung-wu/chattodo-forum/main/deploy/deploy.sh -o deploy.sh
+> sudo bash deploy.sh
+> # 若自动探测 IP 不准，显式指定：  PUBLIC_ADDR=1.2.3.4 sudo -E bash deploy.sh
+> # 部署非默认分支：              BRANCH=你的分支 sudo -E bash deploy.sh
+> ```
+>
+> 脚本自动完成：装 Node 静态包 → 原生 Postgres（initdb/建库/pg_hba）→ 建运行用户 →
+> clone 代码 → 生成 `.env`（随机强口令）→ `npm run setup` → systemd 托管 NodeBB →
+> Caddy 纯 HTTP 反代 :80 → firewalld/SELinux → 本地验收，结尾打印管理员账号密码。
+>
+> ⚠️ 纯 HTTP：管理员登录明文传输，仅在可信网络登录 `/admin`；有域名后按脚本结尾提示切 HTTPS。
+>
+> 下面是等价的手动分步清单（想理解每步做了什么、或环境与上述不同时看这里）。
+
+---
+
 > 约定：项目部署在 `/opt/chattodo-forum`，运行用户 `nodebb`，域名 `forum.example.com`。
 > 按你的实际情况替换这些值（同时改 `deploy/*.service`、`deploy/Caddyfile`、`.env`）。
 >
