@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /*
  * Mock App SSO backend — 模拟 App 后端的 OAuth2 授权码流。

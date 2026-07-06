@@ -1,4 +1,4 @@
-﻿{
+{
 	"id": "nodebb-plugin-chattodo-forum",
 	"name": "LinX Forum Tweaks",
 	"description": "论坛侧薄逻辑：功能建议按票排序、新话题推送团队 IM 中转、状态标签仅 staff 可打。",

@@ -1,4 +1,4 @@
-﻿{
+{
 	"name": "nodebb-plugin-chattodo-sso",
 	"version": "0.0.1",
 	"description": "LinX forum SSO plugin (OAuth2 delegated to App backend)",

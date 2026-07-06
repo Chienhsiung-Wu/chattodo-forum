@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /*
  * LinX SSO —— 委托 App 后端的 OAuth2 登录（DiscourseConnect 风格）。

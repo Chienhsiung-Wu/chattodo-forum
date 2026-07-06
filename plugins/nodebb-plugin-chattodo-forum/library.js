@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /*
  * 灵信论坛侧薄逻辑（对应 PRD FR-4.1 / FR-4.2 / FR-5）。

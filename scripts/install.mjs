@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 'use strict';
 //
 // 一键重建论坛环境（幂等）。nodebb/ 目录不入库，本脚本从零克隆并配置。

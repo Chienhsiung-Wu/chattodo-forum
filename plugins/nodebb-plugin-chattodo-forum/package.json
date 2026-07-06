@@ -1,4 +1,4 @@
-﻿{
+{
 	"name": "nodebb-plugin-chattodo-forum",
 	"version": "0.0.1",
 	"description": "LinX forum server-side tweaks (votes sort, IM relay, staff-only status tags)",

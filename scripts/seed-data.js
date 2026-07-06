@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /*
  * 上线前种子内容（真中文正文，≥18 帖）。对应 PRD FR-6。

@@ -1,4 +1,4 @@
-﻿# 部署到 OpenCloudOS 服务器（Caddy 反代 · 纯浏览上线）
+# 部署到 OpenCloudOS 服务器（Caddy 反代 · 纯浏览上线）
 
 本清单对应「先不接真实 App SSO、以公开浏览为主」的上线目标。目标系统 **OpenCloudOS**
 （腾讯云，RHEL/CentOS 血统，用 `dnf`、`firewalld`、SELinux）。后续接真实登录/IM 见文末。

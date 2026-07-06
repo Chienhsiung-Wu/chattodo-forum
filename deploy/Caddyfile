@@ -1,4 +1,4 @@
-﻿# 灵信论坛 — Caddy 反代 + 自动 TLS
+# 灵信论坛 — Caddy 反代 + 自动 TLS
 # 用法：把域名换成你的，放到 /etc/caddy/Caddyfile（或 import 进去），systemctl reload caddy。
 # Caddy 会自动向 Let's Encrypt 申请并续期证书（前提：该域名的 A/AAAA 记录已指向本服务器，80/443 放行）。
 

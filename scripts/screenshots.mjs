@@ -1,4 +1,4 @@
-﻿// DoD 验收截图：驱动真实浏览器走通关键流程并截图。
+// DoD 验收截图：驱动真实浏览器走通关键流程并截图。
 // 用法：node scripts/screenshots.mjs
 import { chromium } from 'playwright';
 import fs from 'node:fs';

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /*
  * 论坛结构与内容一键初始化（幂等）。对应 PRD FR-2 / FR-3 / FR-4 / FR-6。

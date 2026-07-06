@@ -1,4 +1,4 @@
-﻿# 灵信论坛 — systemd 服务单元
+# 灵信论坛 — systemd 服务单元
 # 安装：
 #   sudo cp deploy/chattodo-forum.service /etc/systemd/system/
 #   （按实际改 User/WorkingDirectory/ExecStart 中的路径和 node 绝对路径）
