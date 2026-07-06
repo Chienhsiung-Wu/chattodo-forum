@@ -55,30 +55,28 @@ function resolvePlink() {
 	if (process.env.PLINK_BIN && fs.existsSync(process.env.PLINK_BIN)) {
 		return process.env.PLINK_BIN;
 	}
-	// Windows 常见安装路径
 	for (const p of ['D:\\software\\putty\\plink.exe', 'C:\\Program Files\\PuTTY\\plink.exe']) {
 		if (fs.existsSync(p)) { return p; }
 	}
-	return 'plink'; // 交给 PATH
+	return 'plink';
 }
 
 const PLINK = resolvePlink();
 
-function ssh(cmd) {
-	const esc = cmd.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-	return execSync(
-		`echo y | "${PLINK}" -pw "${VPS_PASSWORD}" -P 22 ${VPS_USER}@${VPS_IP} "${esc}"`,
-		{ encoding: 'utf8', stdio: 'pipe' }
-	);
+// ── 在 VPS 上跑一条命令（输出透传到本机终端） ─────────────────
+function remote(cmd) {
+	execSync(`echo y | "${PLINK}" -pw "${VPS_PASSWORD}" -P 22 ${VPS_USER}@${VPS_IP} "${cmd}"`, {
+		encoding: 'utf8',
+		stdio: 'inherit',
+	});
 }
 
-function sshOut(cmd) {
-	// 把 stdout 原样透传给本机终端
-	const esc = cmd.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-	return execSync(
-		`echo y | "${PLINK}" -pw "${VPS_PASSWORD}" -P 22 ${VPS_USER}@${VPS_IP} "${esc}"`,
-		{ encoding: 'utf8', stdio: 'inherit' }
-	);
+// ── 在 VPS 上跑命令，静默收集输出 ──────────────────────────────
+function remoteCapture(cmd) {
+	return execSync(`echo y | "${PLINK}" -pw "${VPS_PASSWORD}" -P 22 ${VPS_USER}@${VPS_IP} "${cmd}"`, {
+		encoding: 'utf8',
+		stdio: 'pipe',
+	}).trim();
 }
 
 // ── 主流程 ──────────────────────────────────────────────────────
@@ -87,47 +85,56 @@ function log(msg) { console.log(`==> ${msg}`); }
 function main() {
 	// 1) 确认 git 工作区干净
 	log('1/6 检查 git 工作区');
-	const status = execSync('git status --porcelain', { encoding: 'utf8', cwd: ROOT }).trim();
+	const status = execSync('git -C "' + ROOT + '" status --porcelain', { encoding: 'utf8' }).trim();
 	if (status) {
-		console.error('[deploy] 工作区不干净，请先 commit 或 stash 变更：');
-		console.error(execSync('git status --short', { encoding: 'utf8', cwd: ROOT }));
+		console.error('[deploy] 工作区不干净，请先 commit 或 stash：');
+		console.error(status);
 		process.exit(1);
 	}
 	console.log('   工作区干净 ✓');
 
 	// 2) 推送当前分支
 	log('2/6 推送代码到 origin');
-	const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8', cwd: ROOT }).trim();
-	console.log(`   当前分支: ${currentBranch}`);
-	execSync(`git push origin ${currentBranch}`, { encoding: 'utf8', stdio: 'inherit', cwd: ROOT });
+	const currentBranch = execSync('git -C "' + ROOT + '" rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
+	console.log('   当前分支: ' + currentBranch);
+	execSync('git -C "' + ROOT + '" push origin ' + currentBranch, { encoding: 'utf8', stdio: 'inherit' });
 	console.log('   推送完成 ✓');
 
-	// 3) VPS 拉取最新代码
+	// 3) VPS 拉取最新代码（用 sudo -u nodebb 跑 git 避免 dubious ownership）
 	log('3/6 VPS 拉取代码');
-	sshOut("cd ${PROJECT_DIR} && sudo -u nodebb git -C ${PROJECT_DIR} config --global --add safe.directory ${PROJECT_DIR} 2>/dev/null; sudo -u nodebb git -C ${PROJECT_DIR} fetch origin && sudo -u nodebb git -C ${PROJECT_DIR} checkout ${BRANCH} && sudo -u nodebb git -C ${PROJECT_DIR} reset --hard origin/${BRANCH}");
+	remote(
+		'cd ' + PROJECT_DIR + ' && ' +
+		'sudo -u nodebb git config --global --add safe.directory ' + PROJECT_DIR + ' 2>/dev/null; ' +
+		'sudo -u nodebb git -C ' + PROJECT_DIR + ' fetch origin && ' +
+		'sudo -u nodebb git -C ' + PROJECT_DIR + ' checkout ' + BRANCH + ' && ' +
+		'sudo -u nodebb git -C ' + PROJECT_DIR + ' reset --hard origin/' + BRANCH
+	);
 	console.log('   拉取完成 ✓');
 
 	// 4) 安装根目录依赖
 	log('4/6 VPS 安装依赖');
-	sshOut(`cd ${PROJECT_DIR} && sudo -u nodebb npm install --no-audit --no-fund`);
+	remote('cd ' + PROJECT_DIR + ' && sudo -u nodebb npm install --no-audit --no-fund');
 	console.log('   依赖安装完成 ✓');
 
-	// 5) 幂等 re-setup（补丁 + 插件 + 构建 + bootstrap）
+	// 5) 幂等 re-setup
 	log('5/6 VPS 运行 setup（幂等）');
-	sshOut(`cd ${PROJECT_DIR} && sudo -u nodebb bash -c 'set -a; . ./.env; set +a; npm run setup'`);
+	remote(
+		'cd ' + PROJECT_DIR + ' && ' +
+		'sudo -u nodebb bash -c \'set -a; . ./.env; set +a; npm run setup\''
+	);
 	console.log('   setup 完成 ✓');
 
 	// 6) 重启 systemd 服务
 	log('6/6 重启论坛服务');
-	sshOut('sudo systemctl restart chattodo-forum');
+	remote('sudo systemctl restart chattodo-forum');
 
-	// 短暂等待后输出状态
-	const state = ssh('systemctl is-active chattodo-forum && journalctl -u chattodo-forum -n 5 --no-pager').trim();
+	// 确认状态
+	const state = remoteCapture('systemctl is-active chattodo-forum && journalctl -u chattodo-forum -n 5 --no-pager');
 	console.log('');
 	console.log(state);
 	console.log('');
 	console.log('✅ 发布完成！');
-	console.log(`   论坛地址：http://${VPS_IP}:4567/`);
+	console.log('   论坛地址：http://' + VPS_IP + ':4567/');
 }
 
 main();
