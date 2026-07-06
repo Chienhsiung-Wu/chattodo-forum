@@ -1,7 +1,7 @@
-{
+﻿{
 	"name": "nodebb-plugin-chattodo-forum",
 	"version": "0.0.1",
-	"description": "ChatTodo forum server-side tweaks (votes sort, IM relay, staff-only status tags)",
+	"description": "LinX forum server-side tweaks (votes sort, IM relay, staff-only status tags)",
 	"main": "library.js",
 	"license": "MIT",
 	"nbbpm": {

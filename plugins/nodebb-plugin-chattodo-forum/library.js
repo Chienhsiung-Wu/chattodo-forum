@@ -1,7 +1,7 @@
-'use strict';
+﻿'use strict';
 
 /*
- * ChatTodo 论坛侧薄逻辑（对应 PRD FR-4.1 / FR-4.2 / FR-5）。
+ * 灵信论坛侧薄逻辑（对应 PRD FR-4.1 / FR-4.2 / FR-5）。
  * 全部为服务端 hook，无客户端资源；相关分类/标签由 bootstrap 写入以下 meta 配置：
  *   chattodo:suggestionCid  功能建议分类 cid（强制按票排序）
  *   chattodo:imCids         需推送 IM 的分类 cid（逗号分隔：功能建议,Bug反馈）

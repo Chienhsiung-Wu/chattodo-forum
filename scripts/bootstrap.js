@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 /*
  * 论坛结构与内容一键初始化（幂等）。对应 PRD FR-2 / FR-3 / FR-4 / FR-6。
@@ -170,9 +170,9 @@ async function configureCategories(roleToCid) {
 
 async function applyConfig(roleToCid) {
 	await meta.configs.setMultiple({
-		title: 'ChatTodo 社区',
-		'brand:name': 'ChatTodo 社区',
-		description: 'ChatTodo —— AI + Agent + Todo 的官方中文社区',
+		title: '灵信社区',
+		'brand:name': '灵信社区',
+		description: '灵信 —— AI + Agent + Todo 的官方中文社区',
 		defaultLang: 'zh-CN',
 		showfullname: 1,
 		'theme:src': '',
@@ -198,7 +198,7 @@ async function applyConfig(roleToCid) {
 	meta.config.newbiePostDelay = 0;
 	meta.config.newbieReputationThreshold = 0;
 	meta.config.postDelay = 0;
-	log('站点配置已写入（语言 zh-CN、品牌、chattodo:* 键、关闭发帖节流）');
+	log('站点配置已写入（语言 zh-CN、品牌、linx:* 键、关闭发帖节流）');
 }
 
 async function findUidByUsername(username) {

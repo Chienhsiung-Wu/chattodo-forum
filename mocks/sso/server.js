@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 /*
  * Mock App SSO backend — 模拟 App 后端的 OAuth2 授权码流。
@@ -78,7 +78,7 @@ function pickerPage(redirectUri, state) {
 	}).join('');
 	return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>ChatTodo 账号登录（模拟）</title>
+		<title>灵信账号登录（模拟）</title>
 		<style>
 			body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f6f8;margin:0;padding:40px 16px;color:#1f2329}
 			.card{max-width:460px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);overflow:hidden}
@@ -91,7 +91,7 @@ function pickerPage(redirectUri, state) {
 			.note{font-size:12px;color:#8a9099;margin-top:4px}
 			.foot{padding:14px 28px;color:#8a9099;font-size:12px;border-top:1px solid #eef0f3}
 		</style></head><body><div class="card">
-		<div class="head"><h1>ChatTodo 账号登录</h1><p>模拟 App 账号体系（DiscourseConnect 风格 SSO）· 选择一个身份继续</p></div>
+		<div class="head"><h1>灵信账号登录</h1><p>模拟 App 账号体系（DiscourseConnect 风格 SSO）· 选择一个身份继续</p></div>
 		<ul>${rows}</ul>
 		<div class="foot">这是本地演示用的模拟登录页，真实环境将委托 App 后端完成鉴权。</div>
 		</div></body></html>`;

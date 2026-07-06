@@ -1,7 +1,7 @@
-'use strict';
+﻿'use strict';
 
 /*
- * ChatTodo SSO —— 委托 App 后端的 OAuth2 登录（DiscourseConnect 风格）。
+ * LinX SSO —— 委托 App 后端的 OAuth2 登录（DiscourseConnect 风格）。
  *
  * 职责（对应 PRD FR-1 / FR-2）：
  *   - external_id 与论坛账号一一绑定（chattodoid:uid 映射）；
@@ -89,7 +89,7 @@ Plugin.getStrategy = async function (strategies) {
 		url: `/auth/${constants.name}`,
 		callbackURL: constants.callbackURL,
 		icon: 'fa-right-to-bracket',
-		labelText: '使用 ChatTodo 账号登录',
+		labelText: '使用 灵信账号登录',
 		color: '#ffffff',
 		scope: constants.scope,
 	});

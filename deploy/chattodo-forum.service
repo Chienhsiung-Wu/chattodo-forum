@@ -1,4 +1,4 @@
-# ChatTodo 论坛 — systemd 服务单元
+﻿# 灵信论坛 — systemd 服务单元
 # 安装：
 #   sudo cp deploy/chattodo-forum.service /etc/systemd/system/
 #   （按实际改 User/WorkingDirectory/ExecStart 中的路径和 node 绝对路径）
@@ -7,7 +7,7 @@
 # 查看日志： journalctl -u chattodo-forum -f
 
 [Unit]
-Description=ChatTodo Community Forum (NodeBB)
+Description=LinX Community Forum (NodeBB)
 Documentation=https://docs.nodebb.org
 After=network.target
 # 若 Postgres 用 docker compose 在同机跑，可加： After=docker.service

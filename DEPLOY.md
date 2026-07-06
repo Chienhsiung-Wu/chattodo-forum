@@ -1,4 +1,4 @@
-# 部署到 OpenCloudOS 服务器（Caddy 反代 · 纯浏览上线）
+﻿# 部署到 OpenCloudOS 服务器（Caddy 反代 · 纯浏览上线）
 
 本清单对应「先不接真实 App SSO、以公开浏览为主」的上线目标。目标系统 **OpenCloudOS**
 （腾讯云，RHEL/CentOS 血统，用 `dnf`、`firewalld`、SELinux）。后续接真实登录/IM 见文末。
@@ -175,7 +175,7 @@ curl -sI https://forum.example.com/ | head -1          # HTTP/2 200
 浏览器打开 `https://forum.example.com`：
 - 首页、6 个版块、22 篇种子帖可正常浏览（只读）。
 - 用第 5 步的 `siteadmin` / 管理员密码可登录后台 `/admin`（走 NodeBB 本地账号，不经 SSO）。
-- 「使用 ChatTodo 账号登录」按钮本次不可用（真 SSO 未接），属预期。
+- 「使用 灵信账号登录」按钮本次不可用（真 SSO 未接），属预期。
 
 ## 10. 日常运维
 
